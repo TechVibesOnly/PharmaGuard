@@ -1,0 +1,168 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role-based attributes",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "pharmacy", "patient", "driver"] },
+        "name": { "type": "string" },
+        "medicalId": { "type": "string", "description": "License for pharmacies" },
+        "vehicleType": { "type": "string", "enum": ["bike", "car", "van", "truck"] },
+        "isEv": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "name"]
+    },
+    "Delivery": {
+      "title": "Delivery",
+      "description": "Pharmaceutical delivery task",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "pharmacyId": { "type": "string" },
+        "patientId": { "type": "string" },
+        "driverId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "picked-up", "in-transit", "delivered", "failed"] },
+        "temperatureCurrent": { "type": "number" },
+        "temperatureMin": { "type": "number" },
+        "temperatureMax": { "type": "number" },
+        "items": { "type": "array" },
+        "location": { "type": "object" },
+        "isEv": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "deliveredAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["pharmacyId", "patientId", "status", "createdAt"]
+    },
+    "Subscription": {
+      "title": "Subscription",
+      "description": "User subscription details",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "plan": { "type": "string", "enum": ["priority", "home", "enterprise"] },
+        "status": { "type": "string", "enum": ["active", "cancelled", "expired"] },
+        "nextBilling": { "type": "string", "format": "date-time" },
+        "prioritySlots": { "type": "number", "description": "Number of priority delivery slots" }
+      },
+      "required": ["userId", "plan", "status"]
+    },
+    "Device": {
+      "title": "Device",
+      "description": "IoT sensory device",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["storage", "transport"] },
+        "temp": { "type": "number" },
+        "humidity": { "type": "number" },
+        "gps": { "type": "object" },
+        "status": { "type": "string", "enum": ["online", "offline", "alert"] },
+        "lastSeen": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Route": {
+      "title": "Route",
+      "description": "AI optimized delivery route",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "driverId": { "type": "string" },
+        "origin": { "type": "object" },
+        "destination": { "type": "object" },
+        "stops": { "type": "array" },
+        "optimizedPath": { "type": "string" },
+        "eta": { "type": "string" },
+        "fuelSavings": { "type": "number" },
+        "carbonOffset": { "type": "number" },
+        "isRural": { "type": "boolean" },
+        "priority": { "type": "string", "enum": ["low", "medium", "high", "critical"] }
+      }
+    },
+    "Impact": {
+      "title": "Impact",
+      "description": "Social and environmental impact metrics",
+      "type": "object",
+      "properties": {
+        "subsidizedDeliveries": { "type": "number" },
+        "evKm": { "type": "number" },
+        "regionsServed": { "type": "number" },
+        "carbonSaved": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Partner": {
+      "title": "Partner",
+      "description": "NGO and healthcare partners",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["NGO", "Medical Center", "Government"] },
+        "location": { "type": "string" },
+        "impactScore": { "type": "number" },
+        "logoUrl": { "type": "string" }
+      }
+    },
+    "Batch": {
+      "title": "Batch",
+      "description": "Blockchain-verified medication batch",
+      "type": "object",
+      "properties": {
+        "drugId": { "type": "string" },
+        "drugName": { "type": "string" },
+        "hash": { "type": "string" },
+        "verified": { "type": "boolean" },
+        "journey": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "step": { "type": "string" },
+              "timestamp": { "type": "string" },
+              "location": { "type": "string" },
+              "sig": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Collection of user profiles"
+    },
+    "deliveries/{deliveryId}": {
+      "schema": "Delivery",
+      "description": "Collection of delivery tracking data"
+    },
+    "subs/{subId}": {
+      "schema": "Subscription",
+      "description": "Collection of subscription records"
+    },
+    "devices/{deviceId}": {
+      "schema": "Device",
+      "description": "Real-time IoT device monitoring"
+    },
+    "routes/{routeId}": {
+      "schema": "Route",
+      "description": "AI optimized paths for logistics"
+    },
+    "batches/{batchId}": {
+      "schema": "Batch",
+      "description": "Immutable ledger for pharma supply chain"
+    },
+    "impacts/{impactId}": {
+      "schema": "Impact",
+      "description": "Global impact tracking"
+    },
+    "partners/{partnerId}": {
+      "schema": "Partner",
+      "description": "NGO and stakeholder network"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "PharmaGuard",
+  "description": "Ethical last-mile pharmaceutical delivery platform featuring real-time temperature tracking, EV-based sustainability, and role-based access for pharmacies, patients, and drivers.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}

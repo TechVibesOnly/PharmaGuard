@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global helpers
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function getUser(uid) { return get(/databases/$(database)/documents/users/$(uid)).data; }
+
+    // User profiles
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.keys().hasAll(['uid', 'email', 'role', 'name'])
+          && data.keys().size() <= 10
+          && data.uid == request.auth.uid
+          && data.email is string
+          && data.role in ['admin', 'pharmacy', 'patient', 'driver'];
+      }
+      allow get: if isSignedIn() && (request.auth.uid == userId || getUser(request.auth.uid).role == 'admin');
+      allow list: if isSignedIn() && getUser(request.auth.uid).role == 'admin';
+      allow create: if isVerified() && isValidUser(incoming());
+      allow update: if isVerified() && isValidUser(incoming()) && incoming().role == existing().role;
+    }
+
+    // Deliveries
+    match /deliveries/{deliveryId} {
+      function isValidDelivery(data) {
+        return data.keys().hasAll(['pharmacyId', 'patientId', 'status', 'createdAt'])
+          && data.status in ['pending', 'picked-up', 'in-transit', 'delivered', 'failed']
+          && data.pharmacyId is string
+          && data.patientId is string;
+      }
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.pharmacyId ||
+        request.auth.uid == resource.data.patientId ||
+        request.auth.uid == resource.data.driverId ||
+        getUser(request.auth.uid).role == 'admin'
+      );
+      allow create: if isVerified() && getUser(request.auth.uid).role == 'pharmacy' && isValidDelivery(incoming());
+      allow update: if isVerified() && (
+        // Driver updates status and location
+        (getUser(request.auth.uid).role == 'driver' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'location', 'temperatureCurrent', 'updatedAt', 'driverId'])) ||
+        // Pharmacy updates details
+        (getUser(request.auth.uid).role == 'pharmacy' && request.auth.uid == existing().pharmacyId && isValidDelivery(incoming())) ||
+        // Admin
+        getUser(request.auth.uid).role == 'admin'
+      );
+    }
+    
+    // Subscriptions
+    match /subs/{subId} {
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.userId || getUser(request.auth.uid).role == 'admin');
+      allow create, update: if isVerified() && (request.auth.uid == incoming().userId || getUser(request.auth.uid).role == 'admin');
+    }
+
+    // IoT Devices
+    match /devices/{deviceId} {
+      allow read: if isSignedIn() && (getUser(request.auth.uid).role in ['admin', 'pharmacy']);
+      allow create, update: if isVerified() && getUser(request.auth.uid).role == 'admin';
+    }
+
+    // AI Routes
+    match /routes/{routeId} {
+      allow read: if isSignedIn();
+      allow create, update: if isVerified() && getUser(request.auth.uid).role in ['admin', 'driver'];
+    }
+
+    // Blockchain Batches
+    match /batches/{batchId} {
+      allow read: if true; // Public access for trust
+      allow create, update: if isVerified() && getUser(request.auth.uid).role in ['admin', 'pharmacy'];
+    }
+
+    // Ethical Impact & Partners
+    match /impacts/{impactId} {
+      allow read: if isSignedIn();
+      allow create, update: if isVerified() && getUser(request.auth.uid).role == 'admin';
+    }
+
+    match /partners/{partnerId} {
+      allow read: if isSignedIn();
+      allow create, update: if isVerified() && getUser(request.auth.uid).role == 'admin';
+    }
+  }
+}
